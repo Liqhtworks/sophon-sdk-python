@@ -1,0 +1,55 @@
+name: Publish to PyPI
+
+# Fires when the sophon-api "Publish SDKs" workflow pushes a v<version> tag
+# into this repo. Builds the sdist + wheel and publishes via PyPI's trusted
+# publisher flow (no long-lived token needed once configured).
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to publish (e.g. v0.1.0). Defaults to the current ref.
+        required: false
+
+permissions:
+  contents: read
+  id-token: write  # required for PyPI trusted publishing
+
+jobs:
+  publish:
+    name: PyPI publish
+    runs-on: ubuntu-latest
+    environment: pypi
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify tag matches pyproject.toml
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(python3 -c "import re,sys; print(re.search(r'^version\\s*=\\s*\"([^\"]+)\"', open('pyproject.toml').read(), re.M).group(1))")"
+          if [ "${tag}" != "${pkg}" ]; then
+            echo "::error::tag v${tag} does not match pyproject.toml version ${pkg}" >&2
+            exit 1
+          fi
+
+      - name: Install build tooling
+        run: python -m pip install --upgrade build
+
+      - name: Build sdist + wheel
+        run: python -m build
+
+      - name: Publish to PyPI (trusted publisher)
+        uses: pypa/gh-action-pypi-publish@release/v1
