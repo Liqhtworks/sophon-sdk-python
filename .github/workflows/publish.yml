@@ -1,13 +1,15 @@
-name: Publish to PyPI
+name: Python SDK CI
 
-# Fires when the sophon-api "Publish SDKs" workflow pushes a v<version> tag
-# into this repo. Builds the sdist + wheel and publishes via PyPI's trusted
-# publisher flow (no long-lived token needed once configured).
+# PRs and main pushes validate the generated package natively in the SDK repo.
+# v<version> tags additionally publish via PyPI trusted publishing.
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "v*"
+  pull_request:
   workflow_dispatch:
     inputs:
       tag:
@@ -19,8 +21,44 @@ permissions:
   id-token: write  # required for PyPI trusted publishing
 
 jobs:
+  validate:
+    name: build + twine check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout package
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tooling
+        run: python -m pip install --upgrade build twine
+
+      - name: Compile package
+        run: python -m compileall -q -f sophon_sdk
+
+      - name: Build sdist + wheel
+        run: python -m build
+
+      - name: Validate package metadata
+        run: python -m twine check dist/*
+
+      - name: Install wheel smoke test
+        shell: bash
+        run: |
+          wheel="$(find dist -maxdepth 1 -name '*.whl' -print -quit)"
+          python -m pip install "${wheel}"
+          python -c "import sophon_sdk; import sophon_sdk.helpers"
+
   publish:
     name: PyPI publish
+    needs: validate
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '')
     runs-on: ubuntu-latest
     environment: pypi
     steps:
@@ -37,8 +75,12 @@ jobs:
 
       - name: Verify tag matches pyproject.toml
         shell: bash
+        env:
+          INPUT_TAG: ${{ github.event.inputs.tag }}
         run: |
-          tag="${GITHUB_REF_NAME#v}"
+          tag="${INPUT_TAG:-${GITHUB_REF_NAME}}"
+          tag="${tag#refs/tags/}"
+          tag="${tag#v}"
           pkg="$(python3 -c "import re,sys; print(re.search(r'^version\\s*=\\s*\"([^\"]+)\"', open('pyproject.toml').read(), re.M).group(1))")"
           if [ "${tag}" != "${pkg}" ]; then
             echo "::error::tag v${tag} does not match pyproject.toml version ${pkg}" >&2
