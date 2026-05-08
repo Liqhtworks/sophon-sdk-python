@@ -107,6 +107,8 @@ from sophon_sdk.models.webhook_response import WebhookResponse as WebhookRespons
 
 # --- Hand-written helpers (spliced in by api/sdk/generate.sh) ------------
 from sophon_sdk.helpers import (  # noqa: E402,F401
+    CreateJobApiLike,
+    JobSource,
     JobTerminalError,
     JobTimeoutError,
     JobsApiLike,
@@ -115,6 +117,8 @@ from sophon_sdk.helpers import (  # noqa: E402,F401
     UploadProgress,
     UploadsApiLike,
     WebhookSignatureError,
+    create_job,
+    upload_job_source,
     upload_file,
     verify_webhook_signature,
     wait_for_job,
