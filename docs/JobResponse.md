@@ -11,7 +11,7 @@ Name | Type | Description | Notes
 **attempt** | **int** |  | 
 **retryable** | **bool** | Whether the job can still be retried (attempt &lt; max_attempts and not terminal). | 
 **profile** | [**JobProfile**](JobProfile.md) | Public profile ID submitted by the customer. For adaptive jobs this stays &#x60;sophon-auto&#x60;; see &#x60;effective_profile_id&#x60; for the worker&#39;s resolved concrete profile.  | 
-**effective_profile_id** | **str** | Concrete profile resolved by the worker. Omitted until dispatch resolves. On explicit-profile jobs this equals &#x60;profile&#x60;; on &#x60;sophon-auto&#x60; jobs it is an internal adaptive profile ID.  | [optional] 
+**effective_profile_id** | **str** | Concrete profile resolved by the worker. Omitted until dispatch resolves. On explicit-profile jobs this equals &#x60;profile&#x60;. On &#x60;sophon-auto&#x60; jobs this is a variant identifier recording which path the API routed the source through; exact encoder settings for a given variant may be updated between releases as the adaptive logic is tuned.  | [optional] 
 **source** | [**JobSourceInfo**](JobSourceInfo.md) |  | 
 **progress** | [**JobProgress**](JobProgress.md) |  | 
 **output** | [**JobOutputInfo**](JobOutputInfo.md) |  | 

@@ -179,8 +179,11 @@ def upload_file(
                 "file_size": size,
                 "mime_type": mime_type,
             }
+            # SOPHON scopes idempotency keys per-route. Same key on
+            # createUpload + completeUpload returns 409. Derive distinct
+            # per-route keys from the caller's seed so retries still work.
             session = api.create_upload(
-                create_upload_request=req, idempotency_key=idem
+                create_upload_request=req, idempotency_key=f"{idem}/create"
             )
             session_id = _attr(session, "id")
             chunk_size = int(_attr(session, "chunk_size"))
@@ -234,7 +237,9 @@ def upload_file(
                 for res in pool.map(upload_one, pending):
                     del res  # propagate exceptions eagerly
 
-        done = api.complete_upload(id=session_id, idempotency_key=idem)
+        done = api.complete_upload(
+            id=session_id, idempotency_key=f"{idem}/complete"
+        )
         return UploadFileResult(
             upload_id=_attr(done, "id"),
             sha256=_attr(done, "sha256"),
