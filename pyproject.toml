@@ -1,6 +1,6 @@
 [project]
 name = "sophon_sdk"
-version = "0.1.4"
+version = "0.1.5"
 description = "SOPHON Encoding API"
 authors = [
   {name = "Liqhtworks",email = "team@openapitools.org"},
