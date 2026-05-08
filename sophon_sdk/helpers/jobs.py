@@ -15,6 +15,10 @@ class JobsApiLike(Protocol):
     def get_job(self, id: str) -> Any: ...
 
 
+class CreateJobApiLike(Protocol):
+    def create_job(self, *, idempotency_key: str, create_job_request: Any) -> Any: ...
+
+
 class JobTerminalError(RuntimeError):
     """Raised when the job reaches failed/canceled and the caller was
     waiting for the default terminal set."""
@@ -77,6 +81,30 @@ def wait_for_job(
 
         _interruptible_sleep(interval, stop)
         interval = min(math.ceil(interval * poll_backoff * 1000) / 1000.0, poll_max_seconds)
+
+
+def create_job(
+    api: CreateJobApiLike,
+    *,
+    idempotency_key: str,
+    create_job_request: Any,
+) -> Any:
+    """Create a job after normalizing omitted metadata to an empty object."""
+    _coerce_metadata_default(create_job_request)
+    return api.create_job(
+        idempotency_key=idempotency_key,
+        create_job_request=create_job_request,
+    )
+
+
+def _coerce_metadata_default(create_job_request: Any) -> None:
+    if isinstance(create_job_request, dict):
+        if create_job_request.get("metadata") is None:
+            create_job_request["metadata"] = {}
+        return
+
+    if getattr(create_job_request, "metadata", None) is None:
+        setattr(create_job_request, "metadata", {})
 
 
 def _interruptible_sleep(seconds: float, stop: threading.Event) -> None:
