@@ -104,6 +104,23 @@ JSON.
 
 Generated endpoint/model docs live under [`docs/`](./docs).
 
+## Versioning
+
+`sophon-sdk` follows [SemVer](https://semver.org/), with one pre-1.0
+caveat: while we are at `v0.x`, **minor bumps may include breaking
+changes**. Pin a compatible range until 1.0:
+
+```bash
+pip install "sophon-sdk~=0.1"
+# or in pyproject.toml: "sophon-sdk>=0.1,<0.2"
+```
+
+Patch releases (`0.1.x`) are always backward-compatible — they ship bug
+fixes, helper-layer improvements, and additive types. Once we cut
+`v1.0.0`, regular SemVer applies and breaking changes only land on
+major bumps. See [`CHANGELOG.md`](./CHANGELOG.md) for the per-release
+log.
+
 ## License
 
 Proprietary. See [`LICENSE`](./LICENSE).
