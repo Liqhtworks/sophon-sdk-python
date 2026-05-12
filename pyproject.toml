@@ -5,7 +5,7 @@ description = "SOPHON Encoding API"
 authors = [
   {name = "Liqhtworks",email = "team@openapitools.org"},
 ]
-license = { text = "Proprietary" }
+license = "Apache-2.0"
 readme = "README.md"
 keywords = ["OpenAPI", "OpenAPI-Generator", "SOPHON Encoding API"]
 requires-python = ">=3.9"
