@@ -37,44 +37,23 @@ encode job, wait for completion, and download the MP4 output.
 
 ```python
 import os
-import urllib.parse
-import urllib.request
 import uuid
 from pathlib import Path
 
 import sophon_sdk
-from sophon_sdk.models.create_job_request import CreateJobRequest
+from sophon_sdk import CreateJobRequest
 
 api_key = os.environ["SOPHON_API_KEY"]
 base_url = os.getenv("SOPHON_BASE_URL", "https://api.liqhtworks.xyz")
 input_path = Path("source.mov")
-mime_type = "video/quicktime" if input_path.suffix == ".mov" else "video/mp4"
 
-
-class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
-    def http_error_302(self, req, fp, code, msg, headers):
-        response = urllib.request.addinfourl(fp, headers, req.get_full_url())
-        response.code = code
-        return response
-
-    http_error_301 = http_error_303 = http_error_307 = http_error_302
-
-
-configuration = sophon_sdk.Configuration(
-    host=base_url,
-    access_token=api_key,
-)
-
+configuration = sophon_sdk.Configuration(host=base_url, access_token=api_key)
 with sophon_sdk.ApiClient(configuration) as api_client:
     uploads = sophon_sdk.UploadsApi(api_client)
     jobs = sophon_sdk.JobsApi(api_client)
 
     result = sophon_sdk.upload_file(
-        uploads,
-        input_path,
-        file_name=input_path.name,
-        mime_type=mime_type,
-        concurrency=4,
+        uploads, input_path, file_name=input_path.name, concurrency=4,
     )
 
     job = sophon_sdk.create_job(
@@ -82,33 +61,18 @@ with sophon_sdk.ApiClient(configuration) as api_client:
         idempotency_key=str(uuid.uuid4()),
         create_job_request=CreateJobRequest(
             source=sophon_sdk.JobSource.upload(result.upload_id),
-            profile="sophon-espresso",
+            profile=sophon_sdk.JOB_PROFILE_SOPHON_ESPRESSO,
         ),
     )
 
-    final = sophon_sdk.wait_for_job(
-        jobs,
-        job.id,
-        timeout_seconds=30 * 60,
-    )
+    final = sophon_sdk.wait_for_job(jobs, job.id, timeout_seconds=30 * 60)
     if final.status != "completed":
         raise RuntimeError(f"job ended in {final.status}")
 
-    req = urllib.request.Request(
-        f"{base_url}/v1/jobs/{final.id}/output",
-        headers={"Authorization": f"Bearer {api_key}"},
-        method="GET",
+    sophon_sdk.download_output(
+        base_url=base_url, api_key=api_key, job_id=final.id,
+        dest=Path("sophon-output.mp4"),
     )
-    opener = urllib.request.build_opener(NoRedirectHandler())
-    redirect = opener.open(req)
-    location = redirect.headers.get("Location")
-    if not location:
-        raise RuntimeError("missing output redirect")
-
-    download_url = urllib.parse.urljoin(base_url.rstrip("/") + "/", location)
-    with urllib.request.urlopen(download_url, timeout=60) as download:
-        Path("sophon-output.mp4").write_bytes(download.read())
-
     print(f"wrote sophon-output.mp4 from {final.id}")
 ```
 
@@ -177,8 +141,10 @@ JSON.
 
 | Helper | Purpose |
 |---|---|
-| `upload_file` | Chunked upload orchestration with bounded concurrency, retries, resume, and progress callbacks. |
+| `upload_file` | Chunked upload orchestration with bounded concurrency, full-phase retries, resume, and progress callbacks. |
 | `wait_for_job` | Poll until terminal status with timeout and typed errors. |
+| `download_output` / `download_output_stream` | Follow the output redirect and stream the encoded MP4 to a path (or expose the response for custom sinks). |
+| `guess_mime_type` | Best-effort MIME type from a path. |
 | `verify_webhook_signature` | Constant-time HMAC verification plus replay-window enforcement. |
 
 ## API Docs
