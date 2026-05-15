@@ -125,19 +125,19 @@ def _attr(obj: Any, name: str) -> Any:
 def _normalize_status(job: Any) -> None:
     """Coerce a job's status field to a plain string for cross-SDK parity
     with Go (Go's helpers.Job.Status is a string). Mutates dicts in place;
-    pydantic models with frozen/typed status are left untouched."""
+    bypasses pydantic validate_assignment via object.__setattr__ so a
+    JobStatus(str, Enum) field on JobResponse is replaced with its .value."""
     if isinstance(job, dict):
         if "status" in job:
             job["status"] = _status_str(job["status"])
         return
     status = getattr(job, "status", None)
-    if status is None or isinstance(status, str):
+    # Plain str (type, not isinstance — JobStatus is str-subclass) → no-op.
+    if status is None or type(status) is str:
         return
     try:
         object.__setattr__(job, "status", _status_str(status))
     except Exception:
-        # Pydantic model with a typed enum field — leave it; callers
-        # of cross-SDK matrix consumers can use _status_str themselves.
         pass
 
 
