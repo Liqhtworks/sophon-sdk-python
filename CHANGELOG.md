@@ -4,6 +4,26 @@ All notable changes to `sophon-sdk` (PyPI) are recorded here. The
 package follows [SemVer](https://semver.org/) — see `README.md` for the
 versioning policy applied during the v0.x pre-1.0 phase.
 
+## [Unreleased]
+
+### Security
+
+- **`download_output` / `download_output_stream` now validate the output
+  URL.** The presigned target must be `https` and on a host allowlist
+  (Backblaze B2 by default, plus the configured API host), and the helper
+  no longer follows a second redirect. This closes an SSRF / local-file
+  (`file://`) / open-redirect-follower gap where a spoofed `302` `Location`
+  could point the client at an arbitrary scheme/host. Pass
+  `allowed_output_hosts=[...]` to extend the allowlist; a disallowed target
+  raises the new `DownloadSecurityError` (exported from `sophon_sdk`).
+- Raised the `urllib3` floor to `>=2.5.0` to exclude releases with known
+  redirect/proxy-auth advisories.
+- Added `SECURITY.md`, a README **Security** section (key scoping +
+  rotation + download allowlist + AUP), and an `examples/webhook-server/`
+  reference (verify-before-parse, constant-time signature check).
+- CI now runs `pip-audit --strict`; added `.github/dependabot.yml`
+  (pip + github-actions).
+
 ## [0.1.5] — 2026-05-14
 
 - `download_output` / `download_output_stream` helpers — follow the

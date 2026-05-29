@@ -1,0 +1,21 @@
+version: 2
+updates:
+  # Runtime + dev Python dependencies (urllib3, pydantic, etc.).
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "security"
+
+  # GitHub Actions used by the publish / generated-PR workflows. These are
+  # pinned to mutable major tags, so advisories should surface as PRs.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "github-actions"

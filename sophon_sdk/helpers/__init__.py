@@ -1,4 +1,9 @@
-from .downloads import DownloadResult, download_output, download_output_stream
+from .downloads import (
+    DownloadResult,
+    DownloadSecurityError,
+    download_output,
+    download_output_stream,
+)
 from .jobs import (
     CreateJobApiLike,
     JobTerminalError,
@@ -21,6 +26,7 @@ from .webhooks import WebhookSignatureError, verify_webhook_signature
 __all__ = [
     "CreateJobApiLike",
     "DownloadResult",
+    "DownloadSecurityError",
     "JobSource",
     "JobsApiLike",
     "JobTerminalError",

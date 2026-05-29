@@ -54,6 +54,7 @@ __all__ = [
     "WebhookResponse",
     # Helpers
     "DownloadResult",
+    "DownloadSecurityError",
     "JobSource",
     "JobsApiLike",
     "JobTerminalError",
@@ -137,6 +138,7 @@ from sophon_sdk.models.webhook_response import WebhookResponse as WebhookRespons
 from sophon_sdk.helpers import (  # noqa: E402,F401
     CreateJobApiLike,
     DownloadResult,
+    DownloadSecurityError,
     JobSource,
     JobTerminalError,
     JobTimeoutError,

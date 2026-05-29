@@ -147,6 +147,45 @@ JSON.
 | `guess_mime_type` | Best-effort MIME type from a path. |
 | `verify_webhook_signature` | Constant-time HMAC verification plus replay-window enforcement. |
 
+## Security
+
+See [`SECURITY.md`](./SECURITY.md) for supported versions and how to report a
+vulnerability privately.
+
+### Scope API keys to least privilege
+
+Create a separate key per integration and grant only the scopes it needs — for
+example, an encode-only worker does not need `webhooks:manage`. Managing
+webhooks requires the `webhooks:manage` scope; keep that on a separate,
+tightly-held key. Smaller scopes mean a leaked key does less damage.
+
+### Rotate keys
+
+Keys are long-lived, so rotate them on a schedule and immediately on suspected
+exposure. Rotate without downtime:
+
+1. Create a new key (with the same scopes) at <https://sophon.rs/account/general>.
+2. Deploy it to your servers (update `SOPHON_API_KEY`).
+3. Once traffic is served by the new key, **revoke the old one** in the
+   dashboard.
+
+Never commit keys, log them, or put them in URLs — the SDK only ever sends the
+key in the `Authorization: Bearer` header.
+
+### Output downloads
+
+`download_output` / `download_output_stream` follow the job-output redirect to
+the presigned storage URL, but only to `https://` hosts on an allowlist
+(Backblaze B2 by default) and never chase a second redirect. If your account
+serves outputs from a custom host, pass `allowed_output_hosts=[...]` (an exact
+host, or `".example.com"` as a suffix). A non-allowlisted or non-https target
+raises `DownloadSecurityError`.
+
+### Acceptable use
+
+Use of the SOPHON API is subject to the Acceptable Use Policy at
+<https://sophon.rs>.
+
 ## API Docs
 
 Generated endpoint/model docs live under [`docs/`](./docs).
