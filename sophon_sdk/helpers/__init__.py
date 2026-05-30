@@ -1,3 +1,9 @@
+from .downloads import (
+    DownloadResult,
+    DownloadSecurityError,
+    download_output,
+    download_output_stream,
+)
 from .jobs import (
     CreateJobApiLike,
     JobTerminalError,
@@ -7,6 +13,7 @@ from .jobs import (
     create_job,
     wait_for_job,
 )
+from .mime import guess_mime_type
 from .sources import JobSource, upload_job_source
 from .uploads import (
     UploadFileResult,
@@ -17,19 +24,24 @@ from .uploads import (
 from .webhooks import WebhookSignatureError, verify_webhook_signature
 
 __all__ = [
-    "JobTerminalError",
-    "JobTimeoutError",
     "CreateJobApiLike",
+    "DownloadResult",
+    "DownloadSecurityError",
     "JobSource",
     "JobsApiLike",
+    "JobTerminalError",
+    "JobTimeoutError",
     "TERMINAL_STATUSES",
     "UploadFileResult",
     "UploadProgress",
     "UploadsApiLike",
     "WebhookSignatureError",
     "create_job",
-    "upload_job_source",
+    "download_output",
+    "download_output_stream",
+    "guess_mime_type",
     "upload_file",
+    "upload_job_source",
     "verify_webhook_signature",
     "wait_for_job",
 ]

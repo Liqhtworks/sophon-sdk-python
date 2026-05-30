@@ -55,6 +55,11 @@ jobs:
           python -m pip install "${wheel}"
           python -c "import sophon_sdk; import sophon_sdk.helpers"
 
+      - name: Audit dependencies for known vulnerabilities
+        run: |
+          python -m pip install pip-audit
+          pip-audit --strict
+
   publish:
     name: PyPI publish
     needs: validate

@@ -138,7 +138,7 @@ def upload_file(
     source: Union[bytes, bytearray, BinaryIO, Path, str],
     *,
     file_name: str,
-    mime_type: str,
+    mime_type: Optional[str] = None,
     upload_id: Optional[str] = None,
     concurrency: int = 4,
     retries: int = _DEFAULT_RETRIES,
@@ -161,7 +161,14 @@ def upload_file(
     idem = idempotency_key or f"idem-{uuid.uuid4()}"
     stop = stop_event or threading.Event()
 
+    if mime_type is None:
+        from .mime import guess_mime_type
+        mime_type = guess_mime_type(file_name)
+
     size, slice_reader, close_source = _source_size_and_reader(source)
+    if size == 0:
+        close_source()
+        raise ValueError("upload_file: source is empty (0 bytes)")
 
     try:
         already_received: set[int] = set()
@@ -182,8 +189,13 @@ def upload_file(
             # SOPHON scopes idempotency keys per-route. Same key on
             # createUpload + completeUpload returns 409. Derive distinct
             # per-route keys from the caller's seed so retries still work.
-            session = api.create_upload(
-                create_upload_request=req, idempotency_key=f"{idem}/create"
+            session = _with_retry(
+                lambda: api.create_upload(
+                    create_upload_request=req, idempotency_key=f"{idem}/create"
+                ),
+                retries=retries,
+                base_ms=retry_base_ms,
+                stop=stop,
             )
             session_id = _attr(session, "id")
             chunk_size = int(_attr(session, "chunk_size"))
@@ -237,8 +249,13 @@ def upload_file(
                 for res in pool.map(upload_one, pending):
                     del res  # propagate exceptions eagerly
 
-        done = api.complete_upload(
-            id=session_id, idempotency_key=f"{idem}/complete"
+        done = _with_retry(
+            lambda: api.complete_upload(
+                id=session_id, idempotency_key=f"{idem}/complete"
+            ),
+            retries=retries,
+            base_ms=retry_base_ms,
+            stop=stop,
         )
         return UploadFileResult(
             upload_id=_attr(done, "id"),

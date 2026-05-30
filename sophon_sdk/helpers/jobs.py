@@ -59,21 +59,23 @@ def wait_for_job(
     using_default_terminal = until is None
     stop = stop_event or threading.Event()
 
-    deadline = time.monotonic() + timeout_seconds
+    start_time = time.monotonic()
+    deadline = start_time + timeout_seconds
     interval = poll_min_seconds
 
     while True:
         if stop.is_set():
             raise RuntimeError("wait_for_job aborted")
         if time.monotonic() > deadline:
-            waited_ms = int((time.monotonic() - (deadline - timeout_seconds)) * 1000)
+            waited_ms = int((time.monotonic() - start_time) * 1000)
             raise JobTimeoutError(job_id, waited_ms)
 
         job = api.get_job(id=job_id)
+        _normalize_status(job)
         if on_progress:
             on_progress(job)
 
-        status = _attr(job, "status")
+        status = _status_str(_attr(job, "status"))
         if status in wait_set:
             if using_default_terminal and status in {"failed", "canceled"}:
                 raise JobTerminalError(job)
@@ -118,3 +120,30 @@ def _attr(obj: Any, name: str) -> Any:
     if isinstance(obj, dict):
         return obj.get(name)
     return getattr(obj, name, None)
+
+
+def _normalize_status(job: Any) -> None:
+    """Coerce a job's status field to a plain string for cross-SDK parity
+    with Go (Go's helpers.Job.Status is a string). Mutates dicts in place;
+    bypasses pydantic validate_assignment via object.__setattr__ so a
+    JobStatus(str, Enum) field on JobResponse is replaced with its .value."""
+    if isinstance(job, dict):
+        if "status" in job:
+            job["status"] = _status_str(job["status"])
+        return
+    status = getattr(job, "status", None)
+    # Plain str (type, not isinstance — JobStatus is str-subclass) → no-op.
+    if status is None or type(status) is str:
+        return
+    try:
+        object.__setattr__(job, "status", _status_str(status))
+    except Exception:
+        pass
+
+
+def _status_str(status: Any) -> Any:
+    """Normalize a JobStatus enum to its string value so callers and
+    comparisons see the wire string regardless of whether the underlying
+    api.get_job returned an enum or a plain dict with a raw status."""
+    value = getattr(status, "value", status)
+    return value

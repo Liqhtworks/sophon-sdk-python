@@ -3,7 +3,7 @@ name = "sophon_sdk"
 version = "0.1.5"
 description = "SOPHON Encoding API"
 authors = [
-  {name = "Liqhtworks",email = "team@openapitools.org"},
+  {name = "Liqhtworks", email = "sdk@liqhtworks.com"},
 ]
 license = { text = "Apache-2.0" }
 readme = "README.md"
@@ -11,7 +11,7 @@ keywords = ["OpenAPI", "OpenAPI-Generator", "SOPHON Encoding API"]
 requires-python = ">=3.9"
 
 dependencies = [
-  "urllib3 (>=2.1.0,<3.0.0)",
+  "urllib3 (>=2.5.0,<3.0.0)",
   "python-dateutil (>=2.8.2)",
   "pydantic (>=2.11)",
   "typing-extensions (>=4.7.1)",
@@ -20,16 +20,15 @@ dependencies = [
 [project.urls]
 Repository = "https://github.com/Liqhtworks/sophon-sdk-python"
 
-[tool.poetry]
-requires-poetry = ">=2.0"
-
-[tool.poetry.group.dev.dependencies]
-pytest = ">= 7.2.1"
-pytest-cov = ">= 2.8.1"
-tox = ">= 3.9.0"
-flake8 = ">= 4.0.0"
-types-python-dateutil = ">= 2.8.19.14"
-mypy = ">= 1.5"
+[project.optional-dependencies]
+dev = [
+  "pytest >= 7.2.1",
+  "pytest-cov >= 2.8.1",
+  "tox >= 3.9.0",
+  "flake8 >= 4.0.0",
+  "types-python-dateutil >= 2.8.19.14",
+  "mypy >= 1.5",
+]
 
 
 [build-system]
